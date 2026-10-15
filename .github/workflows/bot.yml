@@ -22,4 +22,4 @@ jobs:
           CHANCE: "0.25"
           # Для Gemini:
           LLM_BASE_URL: https://generativelanguage.googleapis.com/v1beta/openai
-          LLM_MODEL: gemini-flash-latest
+          LLM_MODEL: gemini-flash-lite-latest
