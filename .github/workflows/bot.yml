@@ -1,0 +1,25 @@
+name: ad-bot
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - run: python bot.py
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+          LLM_KEY: ${{ secrets.LLM_KEY }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' }}
+          CHANCE: "0.25"
+          # Для Gemini:
+          LLM_BASE_URL: https://generativelanguage.googleapis.com/v1beta/openai
+          LLM_MODEL: gemini-flash-latest
