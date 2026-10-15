@@ -1,4 +1,4 @@
-import os, random, requests
+import os, random, requests, time
 from datetime import datetime, timezone, timedelta
 
 DISCORD = "https://discord.com/api/v10"
@@ -45,14 +45,22 @@ def ask_llm(game, ctx, text):
     for g, c, t, a in SHOTS:
         msgs += [{"role": "user", "content": fmt(g, c, t)}, {"role": "assistant", "content": a}]
     msgs.append({"role": "user", "content": fmt(game, ctx, text)})
-    r = requests.post(
-        f"{BASE}/chat/completions",
-        headers={"Authorization": f"Bearer {os.environ['LLM_KEY']}"},
-        json={"model": MODEL, "messages": msgs, "temperature": 0.9, "max_tokens": 120},
-        timeout=60,
-    )
-    r.raise_for_status()
-    return r.json()["choices"][0]["message"]["content"].strip().strip('"«»')
+    for attempt in range(4):
+        try:
+            r = requests.post(
+                f"{BASE}/chat/completions",
+                headers={"Authorization": f"Bearer {os.environ['LLM_KEY']}"},
+                json={"model": MODEL, "messages": msgs, "temperature": 0.9, "max_tokens": 120},
+                timeout=60,
+            )
+        except requests.RequestException:
+            r = None
+        if r is not None and r.status_code not in (429, 500, 502, 503, 504):
+            r.raise_for_status()
+            return r.json()["choices"][0]["message"]["content"].strip().strip('"«»')
+        time.sleep(5 * (attempt + 1))
+    print("LLM недоступна, пропускаю этот запуск")
+    return ""
 
 def main():
     if not FORCE and random.random() > CHANCE:
